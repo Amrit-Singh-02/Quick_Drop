@@ -10,7 +10,7 @@ export const addProductValidator = Joi.object({
   name: Joi.string().trim().min(2).max(100).required(),
   description: Joi.string().trim().min(5).required(),
   price: Joi.number().positive().required(),
-  images: Joi.array().items(imageSchema).min(1).required(),
+  images: Joi.array().items(imageSchema).min(1).optional(),
   category: Joi.string().trim().required(),
   brand: Joi.string().trim().required(),
   stocks: Joi.number().integer().min(0).required(),

@@ -6,8 +6,10 @@ import {
   deleteUploadedImage,
   uploadImage,
 } from "../../utils/cloudinary.util.js";
-import { addProductValidator, updateProductValidator } from "../../validators/product.validator.js";
-import { validate } from "../../middlewares/validate.middleware.js";
+import {
+  addProductValidator,
+  updateProductValidator,
+} from "../../validators/product.validator.js";
 
 export const getURL = (bufferValue, mimetype) => {
   const b64 = bufferValue.toString("base64");
@@ -17,7 +19,7 @@ export const getURL = (bufferValue, mimetype) => {
 
 export const addProduct = expressAsyncHandler(async (req, res, next) => {
   if (!req.file) {
-    return next(new CustomError("Product image is required", 400));
+    return next(new CustomError(400, "Product image is required"));
   }
   const { error, value } = addProductValidator.validate(req.body, {
     abortEarly: false,
@@ -59,7 +61,7 @@ export const addProduct = expressAsyncHandler(async (req, res, next) => {
 
 export const updateProduct = expressAsyncHandler(async (req, res, next) => {
   const { id } = req.params;
-    const { error, value } = updateProductValidator.validate(req.body, {
+  const { error, value } = updateProductValidator.validate(req.body, {
     abortEarly: false,
   });
   if (error) {
@@ -67,12 +69,14 @@ export const updateProduct = expressAsyncHandler(async (req, res, next) => {
       new CustomError(400, error.details.map((ele) => ele.message).join(", "))
     );
   }
-  const updateProduct = await ProductModel.findByIdAndUpdate(id, req.body, {
+  const updatedProduct = await ProductModel.findByIdAndUpdate(id, value, {
     new: true,
     runValidators: true,
   });
-  if (!updateProduct) next(new CustomError(404, "No product found to update"));
-  new ApiResponse(200, "Product updated Successfully", updateProduct).send(res);
+  if (!updatedProduct) {
+    return next(new CustomError(404, "No product found to update"));
+  }
+  new ApiResponse(200, "Product updated Successfully", updatedProduct).send(res);
 });
 
 export const deleteProduct = expressAsyncHandler(async (req, res, next) => {
@@ -80,7 +84,7 @@ export const deleteProduct = expressAsyncHandler(async (req, res, next) => {
   const deletedProduct = await ProductModel.findByIdAndDelete(id, {
     new: true,
   });
-  if (!deletedProduct) next(new CustomError(404, "No product found"));
+  if (!deletedProduct) return next(new CustomError(404, "No product found"));
   new ApiResponse(200, "Product deleted successfully", deletedProduct).send(
     res
   );
@@ -88,31 +92,44 @@ export const deleteProduct = expressAsyncHandler(async (req, res, next) => {
 
 export const getProducts = expressAsyncHandler(async (req, res, next) => {
   const products = await ProductModel.find();
-  if (!products) next(new CustomError(404, "No products found, add some"));
+  if (!products || products.length === 0) {
+    return next(new CustomError(404, "No products found, add some"));
+  }
   new ApiResponse(200, "fetched products successfully!", products).send(res);
 });
 
 export const getProduct = expressAsyncHandler(async (req, res, next) => {
   const { id } = req.params;
   const product = await ProductModel.findById(id);
-  if (!product) next(new CustomError(404, "not found anything"));
+  if (!product) return next(new CustomError(404, "not found anything"));
   new ApiResponse(200, "Found the product", product).send(res);
 });
 
 export const updateImage = expressAsyncHandler(async (req, res, next) => {
-  const { public_id, id } = req.body;
+  const { public_id, productId, id } = req.body;
+  const targetId = productId || id;
+  if (!targetId) {
+    return next(new CustomError(400, "Product id is required"));
+  }
+  if (!req.file) {
+    return next(new CustomError(400, "Product image is required"));
+  }
   const bufferValue = req?.file?.buffer;
   const imageURL = getURL(bufferValue, req?.file?.mimetype);
 
-  let existingProduct = await ProductModel.findById({ id });
-  if (!existingProduct) next(new CustomError(404, "cannot find the product"));
+  let existingProduct = await ProductModel.findById(targetId);
+  if (!existingProduct) {
+    return next(new CustomError(404, "cannot find the product"));
+  }
 
   const resp = await deleteUploadedImage(public_id);
 
-  if (resp.result !== "OK") return next(new CustomError(500, resp.result));
+  if (resp.result?.toLowerCase() !== "ok") {
+    return next(new CustomError(500, resp.result));
+  }
 
-  const uploadedResp = await uploadedImage(imageURL);
-  let updatedImages = [
+  const uploadedResp = await uploadImage(imageURL);
+  const updatedImages = [
     {
       public_id: uploadedResp.public_id,
       url: uploadedResp.secure_url,
@@ -127,13 +144,16 @@ export const updateImage = expressAsyncHandler(async (req, res, next) => {
 
 export const deleteImage = expressAsyncHandler(async (req, res, next) => {
   const { public_id, productId } = req.body;
+  if (!productId) {
+    return next(new CustomError(400, "Product id is required"));
+  }
 
   let existingProduct = await ProductModel.findById(productId);
-  if (!existingProduct) next(new CustomError(404, "Product Not Found"));
+  if (!existingProduct) return next(new CustomError(404, "Product Not Found"));
 
   const resp = await deleteUploadedImage(public_id);
 
-  if (resp.result === "ok") {
+  if (resp.result?.toLowerCase() === "ok") {
     existingProduct.images = [];
     await existingProduct.save();
   } else {
