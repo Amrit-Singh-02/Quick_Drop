@@ -19,7 +19,7 @@ export const getURL = (bufferValue, mimetype) => {
 
 export const addProduct = expressAsyncHandler(async (req, res, next) => {
   if (!req.file) {
-    return next(new CustomError(400, "Product image is required"));
+    return next(new CustomError(400,"Product image is required"));
   }
   const { error, value } = addProductValidator.validate(req.body, {
     abortEarly: false,
@@ -69,14 +69,12 @@ export const updateProduct = expressAsyncHandler(async (req, res, next) => {
       new CustomError(400, error.details.map((ele) => ele.message).join(", "))
     );
   }
-  const updatedProduct = await ProductModel.findByIdAndUpdate(id, value, {
+  const updateProduct = await ProductModel.findByIdAndUpdate(id, {$set:value}, {
     new: true,
     runValidators: true,
   });
-  if (!updatedProduct) {
-    return next(new CustomError(404, "No product found to update"));
-  }
-  new ApiResponse(200, "Product updated Successfully", updatedProduct).send(res);
+  if (!updateProduct) return next(new CustomError(404, "No product found to update"));
+  new ApiResponse(200, "Product updated Successfully", updateProduct).send(res);
 });
 
 export const deleteProduct = expressAsyncHandler(async (req, res, next) => {
