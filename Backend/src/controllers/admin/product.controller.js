@@ -19,7 +19,7 @@ export const getURL = (bufferValue, mimetype) => {
 
 export const addProduct = expressAsyncHandler(async (req, res, next) => {
   if (!req.file) {
-    return next(new CustomError(400,"Product image is required"));
+    return next(new CustomError(400, "Product image is required"));
   }
   const { error, value } = addProductValidator.validate(req.body, {
     abortEarly: false,
@@ -42,15 +42,33 @@ export const addProduct = expressAsyncHandler(async (req, res, next) => {
     },
   ];
 
-  const { name, description, price, category, brand, stocks } = value;
+  const {
+    name,
+    description,
+    price,
+    category,
+    subCategory,
+    brand,
+    stocks,
+    discount,
+  } = value;
+
+  const categoryIds = Array.isArray(category) ? category : [category];
+  const subCategoryIds = subCategory
+    ? Array.isArray(subCategory)
+      ? subCategory
+      : [subCategory]
+    : [];
   const newProduct = await ProductModel.create({
     name,
     description,
     price,
     images: imgArr,
-    category,
+    category: categoryIds,
+    subCategory: subCategoryIds,
     brand,
     stocks,
+    discount: discount ?? null,
   });
   if (!newProduct) {
     return next(new CustomError(404, "Cannot add product"));
@@ -69,11 +87,28 @@ export const updateProduct = expressAsyncHandler(async (req, res, next) => {
       new CustomError(400, error.details.map((ele) => ele.message).join(", "))
     );
   }
-  const updateProduct = await ProductModel.findByIdAndUpdate(id, {$set:value}, {
-    new: true,
-    runValidators: true,
-  });
-  if (!updateProduct) return next(new CustomError(404, "No product found to update"));
+  const updateData = { ...value };
+  if (updateData.category) {
+    updateData.category = Array.isArray(updateData.category)
+      ? updateData.category
+      : [updateData.category];
+  }
+  if (updateData.subCategory) {
+    updateData.subCategory = Array.isArray(updateData.subCategory)
+      ? updateData.subCategory
+      : [updateData.subCategory];
+  }
+
+  const updateProduct = await ProductModel.findByIdAndUpdate(
+    id,
+    { $set: updateData },
+    {
+      new: true,
+      runValidators: true,
+    },
+  );
+  if (!updateProduct)
+    return next(new CustomError(404, "No product found to update"));
   new ApiResponse(200, "Product updated Successfully", updateProduct).send(res);
 });
 
