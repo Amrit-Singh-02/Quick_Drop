@@ -1,7 +1,7 @@
 import express from "express";
 import dotenv from "dotenv";
 dotenv.config({ quiet: true });
-
+import cors from 'cors';
 import userRoutes from "./src/routes/user/user.routes.js";
 import { errorMiddleware } from "./src/middlewares/error.middleware.js";
 import cookieParser from "cookie-parser";
@@ -13,6 +13,12 @@ import addressRoutes from "./src/routes/user/address.route.js";
 import cartRouter from "./src/routes/user/cart.route.js";
 
 const app = express();
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+    credentials: true,
+  })
+);
 
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));

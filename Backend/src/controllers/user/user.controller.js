@@ -29,7 +29,7 @@ export const registerUser = expressAsyncHandler(async (req, res, next) => {
     `<h1> this is for verification</h1> <a href="${verification_url}">Click Here</a> <h3> ${emailVerificationToken} </h3>`,
   );
 
-  new ApiResponse(201, "User Registered Successfully", newUser).send(res);
+  new ApiResponse(201, "User Registered Successfully. Verification link sent to your email.", newUser).send(res);
 });
 
 // ! --------------------------------------------------------------
