@@ -21,29 +21,29 @@ router.patch(
   "/update-profile",
   validate(updateProfileSchema),
   authenticate,
-  user.updateProfile,
+  user.updateProfile
 );
 router.patch(
   "/update-password",
   validate(updatePasswordSchema),
   authenticate,
-  user.changePassword,
+  user.changePassword
 );
 router.get("/verify-email/:emailToken", user.verifyEmail);
 router.post(
   "/resend-verification",
   validate(forgotPasswordSchema),
-  user.resendEmailVerificationLink,
+  user.resendEmailVerificationLink
 );
 router.post(
   "/forgot-password",
   validate(forgotPasswordSchema),
-  user.forgotPassword,
+  user.forgotPassword
 );
 router.post(
   "/reset-password/:passwordToken",
   validate(resetPasswordSchema),
-  user.resetPassword,
+  user.resetPassword
 );
 router.get("/current", authenticate, user.currentUser);
 

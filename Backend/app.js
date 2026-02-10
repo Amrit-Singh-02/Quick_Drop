@@ -10,6 +10,7 @@ import adminRoutes from "./src/routes/admin/product.route.js";
 import adminCategoryRoutes from "./src/routes/admin/category.route.js";
 import adminSubCategoryRoutes from "./src/routes/admin/subCategory.route.js";
 import addressRoutes from "./src/routes/user/address.route.js";
+import cartRouter from "./src/routes/user/cart.route.js";
 
 const app = express();
 
@@ -23,6 +24,7 @@ app.use("/api/v1/admin/subcategory", adminSubCategoryRoutes);
 app.use("/api/v1/shop/product",productRoutes);
 app.use("/api/v1/user", userRoutes);
 app.use("/api/v1/user/address", addressRoutes);
+app.use("/api/v1/cart",cartRouter)
 
 app.use(errorMiddleware);
 export default app;
