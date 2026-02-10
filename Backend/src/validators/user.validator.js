@@ -38,7 +38,13 @@ export const forgotPasswordSchema = Joi.object({
 });
 
 export const resetPasswordSchema = Joi.object({
-  confirmPassword:Joi.string().min(3).max(50).required(),
-  password: Joi.string().min(3).max(50).required(),
+  password: Joi.string().min(8).required(),
+  confirmPassword: Joi.string()
+    .valid(Joi.ref('password'))
+    .required()
+    .messages({
+      'any.only': 'Passwords do not match',
+    }),
 });
+
 
